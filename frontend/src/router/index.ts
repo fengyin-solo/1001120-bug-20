@@ -6,6 +6,7 @@ const Vessel = () => import('@/views/vessel/index.vue')
 const Voyage = () => import('@/views/voyage/index.vue')
 const Crane = () => import('@/views/crane/index.vue')
 const Loading = () => import('@/views/loading/index.vue')
+const LoadingDetail = () => import('@/views/loading/detail.vue')
 const Yard = () => import('@/views/yard/index.vue')
 const Container = () => import('@/views/container/index.vue')
 const Yardstore = () => import('@/views/yardstore/index.vue')
@@ -29,6 +30,7 @@ const router = createRouter({
     { path: '/voyage', name: 'voyage', component: Voyage },
     { path: '/crane', name: 'crane', component: Crane },
     { path: '/loading', name: 'loading', component: Loading },
+    { path: '/loading/:id', name: 'loading-detail', component: LoadingDetail },
     { path: '/yard', name: 'yard', component: Yard },
     { path: '/container', name: 'container', component: Container },
     { path: '/yardstore', name: 'yardstore', component: Yardstore },
