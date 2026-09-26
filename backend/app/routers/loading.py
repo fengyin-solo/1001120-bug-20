@@ -16,17 +16,33 @@ LIST_FIELDS = ["任务编号", "关联航次", "作业类型", "计划箱量", "
 STATUSES = ["待开工", "作业中", "待复核", "已完成"]
 
 
+@router.get("/summary")
+def summary() -> dict[str, Any]:
+    """装卸任务看板：各状态任务数、已完成任务的完成箱量合计、班组缺失任务数。"""
+    return service.summary()
+
+
+@router.get("/export")
+def export_entries() -> dict[str, Any]:
+    """导出装卸任务清单：返回当前过滤条件下的全量数据。"""
+    items, total = service.list_entries(page=1, size=10000)
+    return {"module": "loading", "total": total, "items": items}
+
+
 @router.get("", response_model=PageResult[dict])
 def list_entries(
     keyword: str | None = Query(default=None, description="按任务编号检索"),
     status: str | None = Query(default=None, description="待开工、作业中、待复核、已完成"),
+    missing_gang: bool = Query(default=False, description="只看作业班组缺失的装卸任务"),
     page: int = 1,
     size: int = 20,
 ) -> PageResult[dict]:
-    """按任务编号与状态过滤装卸任务列表；没有数据时返回空页，不报错。"""
+    """按任务编号、任务状态与班组缺失过滤装卸任务列表；没有数据时返回空页，不报错。"""
     if size > 200:
         raise HTTPException(status_code=400, detail="每页最多 200 条，请缩小分页范围")
-    items, total = service.list_entries(keyword=keyword, status=status, page=page, size=size)
+    items, total = service.list_entries(
+        keyword=keyword, status=status, missing_gang=missing_gang, page=page, size=size
+    )
     return PageResult(items=items, total=total, page=page, size=size)
 
 
@@ -52,14 +68,7 @@ def create_entry(payload: EntryPayload) -> ActionResult:
 def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
     """对单条装卸任务执行确认开工、提交复核、确认完成；不允许的动作会被拦下并说明原因。"""
     action = str(payload.values.get("action") or "").strip()
-    entry, message = service.run_action(entry_id, action)
+    entry, message = service.run_action(entry_id, action, payload.values)
     if entry is None:
         return ActionResult(ok=False, message=message)
     return ActionResult(ok=True, message=message, entry=entry)
-
-
-@router.get("/export")
-def export_entries() -> dict[str, Any]:
-    """导出装卸任务清单：返回当前过滤条件下的全量数据。"""
-    items, total = service.list_entries(page=1, size=10000)
-    return {"module": "loading", "total": total, "items": items}
